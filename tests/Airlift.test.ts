@@ -2,7 +2,9 @@ import { AIRLIFTED, airlifted, recordAirlift } from '../lib/airlifted';
 import Airlift from '../Airlift';
 import City from '@civ-clone/core-city/City';
 import CityRegistry from '@civ-clone/core-city/CityRegistry';
+import CityDestroyed from '@civ-clone/core-city/Rules/Destroyed';
 import Criterion from '@civ-clone/core-rule/Criterion';
+import PendingEffect from '@civ-clone/core-pending-effect/PendingEffect';
 import Effect from '@civ-clone/core-rule/Effect';
 import Moved from '@civ-clone/core-unit/Rules/Moved';
 import PendingEffectRegistry from '@civ-clone/core-pending-effect/PendingEffectRegistry';
@@ -226,15 +228,35 @@ describe('Airlift', (): void => {
       recordAirlift(source, deps);
       recordAirlift(theirs, deps);
 
-      const [rule] = airliftRules('test', { pendingEffectRegistry });
+      const rules = airliftRules('test', { pendingEffectRegistry });
 
-      expect(rule.id()).to.equal('test:airlift/clear-airlifted');
+      expect(rules.map((rule) => rule.id())).to.deep.equal([
+        'test:airlift/clear-airlifted',
+        'test:airlift/city-destroyed',
+      ]);
 
-      ruleRegistry.register(rule);
+      ruleRegistry.register(...rules);
       ruleRegistry.process(TurnStart, player);
 
       expect(airlifted(source, deps)).to.false;
       expect(airlifted(theirs, deps)).to.true;
+    });
+
+    it("removes a destroyed city's records, and only its airlift records", (): void => {
+      const { deps, destination, pendingEffectRegistry, ruleRegistry, source } =
+          setUp(),
+        other = new PendingEffect('another:handler', source);
+
+      recordAirlift(source, deps);
+      recordAirlift(destination, deps);
+      pendingEffectRegistry.register(other);
+
+      ruleRegistry.register(...airliftRules('test', { pendingEffectRegistry }));
+      ruleRegistry.process(CityDestroyed, source, null);
+
+      expect(airlifted(source, deps)).to.false;
+      expect(airlifted(destination, deps)).to.true;
+      expect(pendingEffectRegistry.getByTarget(source)).to.deep.equal([other]);
     });
   });
 });

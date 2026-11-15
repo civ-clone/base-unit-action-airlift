@@ -11,7 +11,9 @@ The `Airlift` unit action: a unit flies from one of its player's cities to anoth
   order: moves left; `canAirlift(unit)` (Civ2: land units); `to` isn't `from`; then the city on `from` and the city on
   `to` are each the unit's player's, pass `canAirliftFrom(city)` (Civ2: an Airport) and haven't airlifted this turn.
 - `lib/airliftRules`: `airliftRules(prefix, { pendingEffectRegistry })` gives `<prefix>:airlift/clear-airlifted`, a
-  `TurnStart` rule that removes the airlift records of the cities of the player whose turn is starting.
+  `TurnStart` rule that removes the airlift records of the cities of the player whose turn is starting, and
+  `<prefix>:airlift/city-destroyed`, a city `Destroyed` rule that removes a destroyed city's records so a razed city
+  isn't kept in a save by them. A captured city keeps its record until its new owner's turn starts, as Civ2's flag does.
 - `lib/airlifted`: `airlifted(city, { pendingEffectRegistry, turn })`, whether the city has airlifted this turn,
   `recordAirlift(city, ...)`, and `AIRLIFTED`, the handler naming a record.
 
